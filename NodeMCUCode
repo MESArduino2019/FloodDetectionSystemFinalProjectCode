@@ -1,0 +1,137 @@
+//Code for NodeMCU (ESP8266-12E):
+#define USING_AXTLS //define AXTLS. This will be used to identify certificate features
+#define waterPin A0 //define the water sensor pin
+#define tiltPin D0 //define the tilt sensor pin
+#include <ESP8266WiFi.h> //define the ESP8266 library for WiFi connection
+#include <WiFiClientSecureAxTLS.h> //Force the use of AxTLS
+using namespace axTLS; //define a namespace used to hold certificate features
+
+const char* ssid = "YOUR_SSID_HERE"; //your network SSID (i.e your network name)
+const char* password = "YOUR_PASSWORD_HERE"; //your network password
+
+const char* host = "maker.ifttt.com"; //the host website. This is always constant. 
+const int httpsPort = 443; //the port of the HTTPS website
+
+void setup() {
+  Serial.begin(115200); //start the Serial Monitor at a baud rate of 115200
+  //define all pins used on the NodeMCU as an input/output
+  pinMode(waterPin, INPUT);
+  pinMode(tiltPin, INPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW); //turn the Built-in LED low
+  Serial.println(); //skip a line on the Serial Monitor
+  Serial.print("connecting to "); //print the message "connecting to" on the Serial Monitor
+  Serial.println(ssid); //print your network password on a new line
+  WiFi.mode(WIFI_STA); //set the NodeMCU as a WiFi station visible on the network
+  WiFi.begin(ssid, password); //attempt to connect to the network using the given SSID and password
+  while (WiFi.status() != WL_CONNECTED) { //while the NodeMCU is not connected
+    delay(500); //delay by half a second
+    Serial.print("."); //print a line of dots on the Serial Monitor
+  }
+  Serial.println(""); //skip a line on the Serial Monitor
+  Serial.println("WiFi connected"); //print the "WiFi connected" message on the Serial Monitor
+  Serial.println("IP address: "); //print the "IP Address: " message on the Serial Monitor
+  Serial.println(WiFi.localIP()); //skip a line and print the IP Address of the NodeMCU on the Serial Monitor
+  digitalWrite(LED_BUILTIN, HIGH); //turn on the built_in LED to notify that the WiFi has been connected
+}
+
+void sendWaterSMS(){ //this function sends an SMS to a user when it is run
+  WiFiClientSecure client; //create an instance of the WiFiClientSecure class
+  Serial.print("connecting to "); //print the message "Connecting to " on the Serial Monitor
+  Serial.println(host); //print the name of the host website on a new line in the Serial Monitor
+  if (!client.connect(host, httpsPort)) { //if the client (the NodeMCU) cannot connect to the host website using the given HTTPS port
+    Serial.println("connection failed"); //print the "Connection failed" message on a new line in the Serial Monitor
+    return; //quit the if loop
+  }
+  String url = "YOUR_URL_FOR_WATER_HERE"; //create a string containing a portion of the URL. When you receive your URL from IFTTT, this string must be changed. To get this, change the event name, located after "trigger/", to your event name, and change the key, located after "key/" to your key.
+  Serial.print("requesting URL: "); //print the message "Requesting url" on the Serial Monitor
+  Serial.println(url); //print the URL on a new line
+  client.print(String("POST ") + url + " HTTP/1.1\r\n" +
+               "Host: " + host + "\r\n" +
+               "User-Agent: Arduino\r\n" +
+               "Connection: close\r\n\r\n"); //append the host website to the URL string and communicate with the URL
+  Serial.println("request sent"); //print the message "Request sent" on a new line in the Serial Monitor
+  while (client.connected()) { //while the client (NodeMCU) is connected to the website
+    String line = client.readStringUntil('\n'); //read the message sent from the website to the NodeMCU
+    if (line == "\r") { //if there was a carriage return
+      Serial.println("headers received"); //print the message "headers received" on a new line in the Serial Monitor
+      break; //quit the if loop
+    }
+  }
+String line = client.readStringUntil(‘\n’); //read the message sent from the website to the NodeMCU
+ if (line.startsWith("Congratulations!")) { //if the carriage return read “Congratulations!”
+    Serial.println("SMS successfull!"); //print “SMS successful” on the Serial Monitor in a new line
+  } 
+else { //else
+    Serial.println("SMS failed"); //print “SMS failed” on the Serial Monitor in a new line
+  }
+  Serial.println("reply was:"); //print “reply was” on a new line in the Serial Monitor
+  Serial.println("=========="); //print a line of equal signs on the Serial Monitor in a new line
+  Serial.println(line); //print the carriage return on the Serial Monitor in a new line
+  Serial.println("=========="); //print a line of equal signs on the Serial Monitor in a new line
+  Serial.println("closing connection"); //print “closing connection” on the Serial Monitor in a new line
+
+}
+
+void sendTiltSMS(){ //the following function is the same function as the previous function, except the event name is changed. Please change the url in this function in order for it to send a different message
+  WiFiClientSecure client;
+  Serial.print("connecting to ");
+  Serial.println(host);
+  if (!client.connect(host, httpsPort)) {
+    Serial.println("connection failed");
+    return;
+  }
+  String url = "YOUR_URL_FOR_TILT_HERE";
+  Serial.print("requesting URL: ");
+  Serial.println(url);
+  client.print(String("POST ") + url + " HTTP/1.1\r\n" +
+               "Host: " + host + "\r\n" +
+               "User-Agent: Arduino\r\n" +
+               "Connection: close\r\n\r\n");
+  Serial.println("request sent");
+  while (client.connected()) {
+    String line = client.readStringUntil('\n');
+    if (line == "\r") {
+      Serial.println("headers received");
+      break;
+    }
+  }
+String line = client.readStringUntil(‘\n’);
+ if (line.startsWith("Congratulations!")) {
+    Serial.println("SMS successfull!");
+  }
+ else {
+    Serial.println("SMS failed");
+  }
+  Serial.println("reply was:");
+  Serial.println("==========");
+  Serial.println(line);
+  Serial.println("==========");
+  Serial.println("closing connection");
+
+}
+
+void loop() {
+  int waterVal = analogRead(waterPin); //read the value of the water sensor
+  int tiltVal = digitalRead(tiltPin); //read the value of the tilt sensor
+  if(waterVal > 600 && tiltVal == 1){ //if both tilt and water are detected
+    Serial.println("Tilt and water detected!”); //print “Tilt and water detected!” in a new line on the Serial Monitor
+    sendTiltSMS(); //send the tilt message to the user
+    delay(15000); //delay by 15 seconds
+    sendWaterSMS(); //send the water message to the user
+    delay(600000)  //delay by 20 minutes to prevent continuous messages; 
+  }
+  else if(waterVal > 600 && tiltVal == 0){ //or if water is detected or tilt is not
+    Serial.println("Water detected!"); //print “Water detected!” in a new line on the Serial Monitor
+    sendWaterSMS(); //send the water message to the user
+    delay(600000); //delay by 20 minutes in order to prevent continuous messages
+  }
+  else if(waterVal < 600 && tiltVal == 1){ //or if tilt is detected but water is not
+    Serial.println("Tilt detected!"); //print “Tilt detected!” in a new line on the Serial Monitor
+    sendTiltSMS(); //send the tilt message to the user
+    delay(600000); //delay by 20 minutes in order to prevent continuous messages 
+  }
+  else if(waterVal < 600 && tiltVal == 0){ //or if both water and tilt are not detected
+    delay(100); //delay by a tenth of a second
+  }
+  }
