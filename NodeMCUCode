@@ -119,7 +119,7 @@ void loop() {
     sendTiltSMS(); //send the tilt message to the user
     delay(15000); //delay by 15 seconds
     sendWaterSMS(); //send the water message to the user
-    delay(600000)  //delay by 20 minutes to prevent continuous messages; 
+    delay(600000); //delay by 20 minutes to prevent continuous messages; 
   }
   else if(waterVal > 600 && tiltVal == 0){ //or if water is detected or tilt is not
     Serial.println("Water detected!"); //print “Water detected!” in a new line on the Serial Monitor
