@@ -1,2 +1,216 @@
-# FloodDetectionSystemFinalProjectCode
-Code used in the final project.
+//FloodDetectionSystemFinalProjectCode
+//Code used in the final project.
+//Code for Arduino Mega2560:
+//include all libraries 
+#include <LiquidCrystal.h> //include LCD Display library
+#include <MaxMatrix.h> //include LED Matrix library
+#include <avr/pgmspace.h> //include ProgramSpace library (this library is used to store data into the flash memory instead of the SRAM, which allows you to store large data types)
+
+const unsigned char CH[] PROGMEM = { //create an array containing all the characters for the LED Matrix, and store it in the flash memory
+  3, 8, B00000000, B00000000, B00000000, B00000000, B00000000, // space
+  1, 8, B01011111, B00000000, B00000000, B00000000, B00000000, // !
+  3, 8, B00000011, B00000000, B00000011, B00000000, B00000000, // "
+  5, 8, B00010100, B00111110, B00010100, B00111110, B00010100, // #
+  4, 8, B00100100, B01101010, B00101011, B00010010, B00000000, // $
+  5, 8, B01100011, B00010011, B00001000, B01100100, B01100011, // %
+  5, 8, B00110110, B01001001, B01010110, B00100000, B01010000, // &
+  1, 8, B00000011, B00000000, B00000000, B00000000, B00000000, // '
+  3, 8, B00011100, B00100010, B01000001, B00000000, B00000000, // (
+  3, 8, B01000001, B00100010, B00011100, B00000000, B00000000, // )
+  5, 8, B00101000, B00011000, B00001110, B00011000, B00101000, // *
+  5, 8, B00001000, B00001000, B00111110, B00001000, B00001000, // +
+  2, 8, B10110000, B01110000, B00000000, B00000000, B00000000, // ,
+  4, 8, B00001000, B00001000, B00001000, B00001000, B00000000, // -
+  2, 8, B01100000, B01100000, B00000000, B00000000, B00000000, // .
+  4, 8, B01100000, B00011000, B00000110, B00000001, B00000000, // /
+  4, 8, B00111110, B01000001, B01000001, B00111110, B00000000, // 0
+  3, 8, B01000010, B01111111, B01000000, B00000000, B00000000, // 1
+  4, 8, B01100010, B01010001, B01001001, B01000110, B00000000, // 2
+  4, 8, B00100010, B01000001, B01001001, B00110110, B00000000, // 3
+  4, 8, B00011000, B00010100, B00010010, B01111111, B00000000, // 4
+  4, 8, B00100111, B01000101, B01000101, B00111001, B00000000, // 5
+  4, 8, B00111110, B01001001, B01001001, B00110000, B00000000, // 6
+  4, 8, B01100001, B00010001, B00001001, B00000111, B00000000, // 7
+  4, 8, B00110110, B01001001, B01001001, B00110110, B00000000, // 8
+  4, 8, B00000110, B01001001, B01001001, B00111110, B00000000, // 9
+  2, 8, B01010000, B00000000, B00000000, B00000000, B00000000, // :
+  2, 8, B10000000, B01010000, B00000000, B00000000, B00000000, // ;
+  3, 8, B00010000, B00101000, B01000100, B00000000, B00000000, // <
+  3, 8, B00010100, B00010100, B00010100, B00000000, B00000000, // =
+  3, 8, B01000100, B00101000, B00010000, B00000000, B00000000, // >
+  4, 8, B00000010, B01011001, B00001001, B00000110, B00000000, // ?
+  5, 8, B00111110, B01001001, B01010101, B01011101, B00001110, // @
+  4, 8, B01111110, B00010001, B00010001, B01111110, B00000000, // A
+  4, 8, B01111111, B01001001, B01001001, B00110110, B00000000, // B
+  4, 8, B00111110, B01000001, B01000001, B00100010, B00000000, // C
+  4, 8, B01111111, B01000001, B01000001, B00111110, B00000000, // D
+  4, 8, B01111111, B01001001, B01001001, B01000001, B00000000, // E
+  4, 8, B01111111, B00001001, B00001001, B00000001, B00000000, // F
+  4, 8, B00111110, B01000001, B01001001, B01111010, B00000000, // G
+  4, 8, B01111111, B00001000, B00001000, B01111111, B00000000, // H
+  3, 8, B01000001, B01111111, B01000001, B00000000, B00000000, // I
+  4, 8, B00110000, B01000000, B01000001, B00111111, B00000000, // J
+  4, 8, B01111111, B00001000, B00010100, B01100011, B00000000, // K
+  4, 8, B01111111, B01000000, B01000000, B01000000, B00000000, // L
+  5, 8, B01111111, B00000010, B00001100, B00000010, B01111111, // M
+  5, 8, B01111111, B00000100, B00001000, B00010000, B01111111, // N
+  4, 8, B00111110, B01000001, B01000001, B00111110, B00000000, // O
+  4, 8, B01111111, B00001001, B00001001, B00000110, B00000000, // P
+  4, 8, B00111110, B01000001, B01000001, B10111110, B00000000, // Q
+  4, 8, B01111111, B00001001, B00001001, B01110110, B00000000, // R
+  4, 8, B01000110, B01001001, B01001001, B00110010, B00000000, // S
+  5, 8, B00000001, B00000001, B01111111, B00000001, B00000001, // T
+  4, 8, B00111111, B01000000, B01000000, B00111111, B00000000, // U
+  5, 8, B00001111, B00110000, B01000000, B00110000, B00001111, // V
+  5, 8, B00111111, B01000000, B00111000, B01000000, B00111111, // W
+  5, 8, B01100011, B00010100, B00001000, B00010100, B01100011, // X
+  5, 8, B00000111, B00001000, B01110000, B00001000, B00000111, // Y
+  4, 8, B01100001, B01010001, B01001001, B01000111, B00000000, // Z
+  2, 8, B01111111, B01000001, B00000000, B00000000, B00000000, // [
+  4, 8, B00000001, B00000110, B00011000, B01100000, B00000000, // \ backslash
+  2, 8, B01000001, B01111111, B00000000, B00000000, B00000000, // ]
+  3, 8, B00000010, B00000001, B00000010, B00000000, B00000000, // hat
+  4, 8, B01000000, B01000000, B01000000, B01000000, B00000000, // _
+  2, 8, B00000001, B00000010, B00000000, B00000000, B00000000, // `
+  4, 8, B00100000, B01010100, B01010100, B01111000, B00000000, // a
+  4, 8, B01111111, B01000100, B01000100, B00111000, B00000000, // b
+  4, 8, B00111000, B01000100, B01000100, B00101000, B00000000, // c
+  4, 8, B00111000, B01000100, B01000100, B01111111, B00000000, // d
+  4, 8, B00111000, B01010100, B01010100, B00011000, B00000000, // e
+  3, 8, B00000100, B01111110, B00000101, B00000000, B00000000, // f
+  4, 8, B10011000, B10100100, B10100100, B01111000, B00000000, // g
+  4, 8, B01111111, B00000100, B00000100, B01111000, B00000000, // h
+  3, 8, B01000100, B01111101, B01000000, B00000000, B00000000, // i
+  4, 8, B01000000, B10000000, B10000100, B01111101, B00000000, // j
+  4, 8, B01111111, B00010000, B00101000, B01000100, B00000000, // k
+  3, 8, B01000001, B01111111, B01000000, B00000000, B00000000, // l
+  5, 8, B01111100, B00000100, B01111100, B00000100, B01111000, // m
+  4, 8, B01111100, B00000100, B00000100, B01111000, B00000000, // n
+  4, 8, B00111000, B01000100, B01000100, B00111000, B00000000, // o
+  4, 8, B11111100, B00100100, B00100100, B00011000, B00000000, // p
+  4, 8, B00011000, B00100100, B00100100, B11111100, B00000000, // q
+  4, 8, B01111100, B00001000, B00000100, B00000100, B00000000, // r
+  4, 8, B01001000, B01010100, B01010100, B00100100, B00000000, // s
+  3, 8, B00000100, B00111111, B01000100, B00000000, B00000000, // t
+  4, 8, B00111100, B01000000, B01000000, B01111100, B00000000, // u
+  5, 8, B00011100, B00100000, B01000000, B00100000, B00011100, // v
+  5, 8, B00111100, B01000000, B00111100, B01000000, B00111100, // w
+  5, 8, B01000100, B00101000, B00010000, B00101000, B01000100, // x
+  4, 8, B10011100, B10100000, B10100000, B01111100, B00000000, // y
+  3, 8, B01100100, B01010100, B01001100, B00000000, B00000000, // z
+  3, 8, B00001000, B00110110, B01000001, B00000000, B00000000, // {
+  1, 8, B01111111, B00000000, B00000000, B00000000, B00000000, // |
+  3, 8, B01000001, B00110110, B00001000, B00000000, B00000000, // }
+  4, 8, B00001000, B00000100, B00001000, B00000100, B00000000, // ~
+};
+
+//define all pins used on the Arduino Mega 2560
+const int waterPin = A0;
+const int matrixStopperPin = 2;
+const int lcdPin = 40; 
+const int tiltPin = A5;
+const int buttonPin = 3;
+const int DIN = 4;
+const int buzzerPin = 5;
+const int CS = 6;
+const int CLK = 7;
+const int D7 = 8;
+const int D6 = 9;
+const int D5 = 10;
+const int D4 = 11;
+const int enable = 12;
+const int RS = 13;
+const int numberOfMaxs = 1;
+
+//create objects for all modules
+LiquidCrystal lcd(RS, enable, D4, D5, D6, D7); //create LCD Display object
+MaxMatrix m(DIN, CS, CLK, numberOfMaxs); //create LED Matrix object
+
+byte buffer[10]; //create a buffer for the LED Matrix
+char string1[] = "   FLOOD AND TILT DETECTED! MOVE TO HIGHER GROUND    "; //message displayed on the LED matrix when water and tilt are detected 
+char string2[] = "   FLOOD DETECTED! MOVE TO HIGHER GROUND   "; //message displayed on the LED Matrix when water is detected
+char string3[] = "   TILT DETECTED!   "; //message displayed on the LED Matrix when tilt is detected
+
+void setup() {
+//set all pins on the Arduino Mega 2560 to an input or output
+  pinMode(waterPin, INPUT);
+  pinMode(matrixStopperPin, INPUT);
+  pinMode(lcdPin, OUTPUT);
+  pinMode(tiltPin, INPUT);
+  pinMode(buttonPin, INPUT);
+  pinMode(buzzerPin, OUTPUT);
+  attachInterrupt(digitalPinToInterrupt(buttonPin), reset, CHANGE); //create an interrupt on the button pin. The interrupt will run the reset() function whenever a change is detected. The interrupt is used to interrupt the program whenever the button is pressed, which will reset the outputs while they are running
+  m.init(); //initialize LED Matrix
+  m.setIntensity(8); //set the intensity of the LEDs on the Matrix
+  reset(); //reset and turn off all modules
+}
+
+void loop() {
+  int waterVal = analogRead(waterPin); //read the value on the water module
+  int tiltVal = analogRead(tiltPin); //read the value on the tilt sensor
+  if(waterVal > 600 &&  tiltVal > 512){ //if both tilt and water are detected
+    digitalWrite(lcdPin, HIGH); //turn on the LCD display
+    lcd.begin(16, 2); //initialize the LCD Display
+    lcd.setCursor(0, 0); //set the position of the cursor on the LCD Display
+    lcd.print("Water detected!"); //print the “Water Detected” message on the LCD Display
+    lcd.setCursor(0, 1); //set the position of the cursor on the LCD Display
+    lcd.print("Tilt detected!"); //print the “Tilt Detected” message on the LCD Display
+    digitalWrite(buzzerPin, HIGH); //turn on the buzzer
+    m.shiftLeft(false, true); //allow the LED Matrix to shift characters from left to right
+    printScrollingText(string1, 100); //print the scrolling text on the LED Matrix
+  }
+  else if(waterVal > 600 && tiltVal < 512){ //if water is detected but tilt is not
+    digitalWrite(lcdPin, HIGH); //turn on the LCD Display
+    lcd.begin(16, 2); //initialize the LCD Display
+    lcd.setCursor(0, 0); //set the position of the LCD Display
+    lcd.print("Water detected!"); //print the “Water Detected” message on the LCD Display
+    digitalWrite(buzzerPin, HIGH); //turn on the buzzer
+    m.shiftLeft(false, true); //allow the LED Matrix to scroll the text from left to right
+    printScrollingText(string2, 100); //print the scrolling text on the LED Matrix
+  }
+  else if(waterVal < 600 && tiltVal > 512){ //if tilt is detected but water is not
+    digitalWrite(lcdPin, HIGH); //turn on the LCD Display
+    lcd.begin(16, 2); //initialize the LCD Display
+    lcd.setCursor(0, 0); //set the position of the LCD Display
+    lcd.print("Tilt detected!"); //print the “Tilt Detected” message on the LCD Display
+    digitalWrite(buzzerPin, HIGH); //turn on the buzzer
+    m.shiftLeft(false, true); //allow the LED Matrix to scroll the text from left to right
+    printScrollingText(string3, 100); //print the scrolling text on the LED Matrix
+  }
+  else if(waterVal < 600 && tiltVal < 512){ //if both tilt and water are not detected
+    reset(); //turn off all modules
+  } //if both tilt and water are not detected
+  delay(500); //delay by half a second in order to prevent overflowing
+}
+
+void printChar(char c, int shift_speed){ //this function extracts all the characters from the array and turns them into characters displayable on the LED Matrix
+  if (c < 32) return;
+  c -= 32;
+  memcpy_P(buffer, CH + 7*c, 7);
+  m.writeSprite(1*8, 0, buffer);
+  m.setColumn(1*8 + buffer[0], 0);
+  for (int i=0; i<buffer[0]+1; i++)
+  {
+    delay(shift_speed);
+    m.shiftLeft(false, false);
+  }
+}
+
+// Extract characters from Scrolling text
+void printScrollingText(char* s, int shift_speed){ //using the characters extracted from the previous function, this function prints them on to the LED Matrix
+  while (*s != 0){
+    printChar(*s, shift_speed);
+    s++;
+    if(digitalRead(matrixStopperPin) == LOW){ //if the buzzer is off
+      Break; //quit the while loop. This prevents the LED Matrix from continuing any further when the button is pressed
+    }
+  }
+}
+
+void reset(){
+  lcd.clear(); //clear the LCD Display
+  digitalWrite(lcdPin, LOW); //turn off the LCD Display
+  digitalWrite(buzzerPin, LOW); //turn off the buzzer
+  m.clear(); //clear the LED Matrix
+  return; //quit the function after everything is turned off
+}
