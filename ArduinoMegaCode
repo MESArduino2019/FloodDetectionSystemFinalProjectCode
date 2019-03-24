@@ -108,7 +108,7 @@ const unsigned char CH[] PROGMEM = { //create an array containing all the charac
 const int waterPin = A0;
 const int matrixStopperPin = 2;
 const int lcdPin = 40; 
-const int tiltPin = A5;
+const int tiltPin = 22;
 const int buttonPin = 3;
 const int DIN = 4;
 const int buzzerPin = 5;
@@ -148,7 +148,7 @@ void setup() {
 void loop() {
   int waterVal = analogRead(waterPin); //read the value on the water module
   int tiltVal = analogRead(tiltPin); //read the value on the tilt sensor
-  if(waterVal > 600 &&  tiltVal > 512){ //if both tilt and water are detected
+  if(waterVal > 600 &&  tiltVal == 1){ //if both tilt and water are detected
     digitalWrite(lcdPin, HIGH); //turn on the LCD display
     lcd.begin(16, 2); //initialize the LCD Display
     lcd.setCursor(0, 0); //set the position of the cursor on the LCD Display
@@ -159,7 +159,7 @@ void loop() {
     m.shiftLeft(false, true); //allow the LED Matrix to shift characters from left to right
     printScrollingText(string1, 100); //print the scrolling text on the LED Matrix
   }
-  else if(waterVal > 600 && tiltVal < 512){ //if water is detected but tilt is not
+  else if(waterVal > 600 && tiltVal == 0){ //if water is detected but tilt is not
     digitalWrite(lcdPin, HIGH); //turn on the LCD Display
     lcd.begin(16, 2); //initialize the LCD Display
     lcd.setCursor(0, 0); //set the position of the LCD Display
@@ -168,7 +168,7 @@ void loop() {
     m.shiftLeft(false, true); //allow the LED Matrix to scroll the text from left to right
     printScrollingText(string2, 100); //print the scrolling text on the LED Matrix
   }
-  else if(waterVal < 600 && tiltVal > 512){ //if tilt is detected but water is not
+  else if(waterVal < 600 && tiltVal == 1){ //if tilt is detected but water is not
     digitalWrite(lcdPin, HIGH); //turn on the LCD Display
     lcd.begin(16, 2); //initialize the LCD Display
     lcd.setCursor(0, 0); //set the position of the LCD Display
@@ -177,7 +177,7 @@ void loop() {
     m.shiftLeft(false, true); //allow the LED Matrix to scroll the text from left to right
     printScrollingText(string3, 100); //print the scrolling text on the LED Matrix
   }
-  else if(waterVal < 600 && tiltVal < 512){ //if both tilt and water are not detected
+  else if(waterVal < 600 && tiltVal == 0){ //if both tilt and water are not detected
     reset(); //turn off all modules
   } //if both tilt and water are not detected
   delay(500); //delay by half a second in order to prevent overflowing
